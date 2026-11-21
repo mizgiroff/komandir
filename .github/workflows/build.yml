@@ -49,13 +49,13 @@ jobs:
         working-directory: ${{ steps.proj.outputs.workdir }}
         run: gradle test
 
-      - name: Build Debug APK
+      - name: Build Release APK
         working-directory: ${{ steps.proj.outputs.workdir }}
-        run: gradle assembleDebug
+        run: gradle assembleRelease
 
       - name: Prepare versioned APK
         run: |
-          cp "${{ steps.proj.outputs.workdir }}/app/build/outputs/apk/debug/app-debug.apk" "komandir_v${{ steps.proj.outputs.version }}.apk"
+          cp "${{ steps.proj.outputs.workdir }}/app/build/outputs/apk/release/app-release.apk" "komandir_v${{ steps.proj.outputs.version }}.apk"
           ls -lh "komandir_v${{ steps.proj.outputs.version }}.apk"
 
       - name: Upload APK artifact
