@@ -26,6 +26,12 @@ jobs:
             mkdir -p src_build
             unzip -q "$LATEST_ZIP" -d src_build
             WORKDIR="src_build"
+            if [ ! -f "$WORKDIR/app/build.gradle.kts" ]; then
+              SUB=$(find "$WORKDIR" -maxdepth 3 -path "*/app/build.gradle.kts" | head -n 1)
+              if [ -n "$SUB" ]; then
+                WORKDIR=$(dirname "$(dirname "$SUB")")
+              fi
+            fi
           else
             WORKDIR="."
           fi
@@ -61,7 +67,7 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: komandir_v${{ steps.proj.outputs.version }}
+          name: komandir_v${{ steps.proj.outputs.version }}_apk
           path: komandir_v${{ steps.proj.outputs.version }}.apk
           retention-days: 3
           if-no-files-found: error
