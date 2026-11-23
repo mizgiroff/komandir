@@ -22,22 +22,20 @@ jobs:
             Sort-Object { if ($_.Name -match '_v(\d+)') { [int]$matches[1] } else { 0 } } |
             Select-Object -Last 1
           if ($zip) {
-            echo "Selected zip: $($zip.Name)"
             if (Test-Path src_bridge) { Remove-Item -Recurse -Force src_bridge }
             Expand-Archive -Path $zip.FullName -DestinationPath src_bridge -Force
             $b = Get-ChildItem -Path src_bridge -Recurse -Directory -Filter "bridge" | Select-Object -First 1
+            $g = Get-ChildItem -Path src_bridge -Recurse -File -Filter "build.gradle.kts" | Where-Object { $_.FullName -match 'app[\\/]build\.gradle\.kts$' } | Select-Object -First 1
+            if ($g) {
+              $ver = (Get-Content $g.FullName | Select-String 'versionName\s*=\s*"([^"]+)"').Matches.Groups[1].Value
+              echo "version=$ver" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+            }
             if ($b) {
               echo "bridgedir=$($b.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-            } else {
-              Write-Error "bridge directory not found in $($zip.Name)"
-              exit 1
-            }
+            } else { exit 1 }
           } elseif (Test-Path bridge) {
             echo "bridgedir=bridge" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-          } else {
-            Write-Error "No komandir_v*.zip or bridge directory found"
-            exit 1
-          }
+          } else { exit 1 }
 
       - uses: actions/setup-go@v5
         with:
@@ -55,3 +53,10 @@ jobs:
           name: KomandirBridge_exe
           path: ${{ steps.prep.outputs.bridgedir }}/KomandirBridge.exe
           if-no-files-found: error
+
+      - name: Attach KomandirBridge.exe to GitHub Release
+        if: steps.prep.outputs.version != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.prep.outputs.version }}
+          files: ${{ steps.prep.outputs.bridgedir }}/KomandirBridge.exe
