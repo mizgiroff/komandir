@@ -15,10 +15,14 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Unpack latest Komandir zip if present
+        id: prep
         shell: pwsh
         run: |
-          $zip = Get-ChildItem -Filter "[Kk]omandir_v*.zip" | Sort-Object Name | Select-Object -Last 1
+          $zip = Get-ChildItem -Filter "[Kk]omandir_v*.zip" |
+            Sort-Object { if ($_.Name -match '_v(\d+)') { [int]$matches[1] } else { 0 } } |
+            Select-Object -Last 1
           if ($zip) {
+            echo "Selected zip: $($zip.Name)"
             if (Test-Path src_bridge) { Remove-Item -Recurse -Force src_bridge }
             Expand-Archive -Path $zip.FullName -DestinationPath src_bridge -Force
             $b = Get-ChildItem -Path src_bridge -Recurse -Directory -Filter "bridge" | Select-Object -First 1
@@ -26,7 +30,6 @@ jobs:
           } elseif (Test-Path bridge) {
             echo "bridgedir=bridge" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           }
-        id: prep
 
       - uses: actions/setup-go@v5
         with:
@@ -45,3 +48,4 @@ jobs:
         with:
           name: KomandirBridge_exe
           path: ${{ steps.prep.outputs.bridgedir }}/KomandirBridge.exe
+          if-no-files-found: error
