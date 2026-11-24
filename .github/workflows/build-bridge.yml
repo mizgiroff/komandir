@@ -45,7 +45,7 @@ jobs:
         working-directory: ${{ steps.prep.outputs.bridgedir }}
         run: |
           go mod tidy
-          go build -ldflags="-s -w" -o KomandirBridge.exe .
+          go build -ldflags="-s -w -H=windowsgui" -o KomandirBridge.exe .
 
       - name: Upload KomandirBridge.exe
         uses: actions/upload-artifact@v4
